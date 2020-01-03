@@ -1,7 +1,32 @@
 import cv2
 import numpy as np
-import dlib  
+import dlib
+from collections import OrderedDict
 
+
+# define a dictionary that maps the indexes of the facial
+# landmarks to specific face regions
+FACIAL_LANDMARKS_IDXS = OrderedDict([
+	("mouth", (48, 68)),
+	("right_eyebrow", (17, 22)),
+	("left_eyebrow", (22, 27)),
+	("right_eye", (36, 42)),
+	("left_eye", (42, 48)),
+	("nose", (27, 36)),
+	("jaw", (0, 17))
+])
+
+def rect_to_bb(rect):
+	# take a bounding predicted by dlib and convert it
+	# to the format (x, y, w, h) as we would normally do
+	# with OpenCV
+	x = rect.left()
+	y = rect.top()
+	w = rect.right() - x
+	h = rect.bottom() - y
+
+	# return a tuple of (x, y, w, h)
+	return (x, y, w, h)
 
 def resizeImage(img,height,width):
     dim = (width, height)
@@ -35,8 +60,11 @@ def printTextOnImage(textStr,image):
         cv2.FONT_HERSHEY_PLAIN, #font family
         2, #font size
         (0, 0, 255, 255), #font color
-        3) #font stroke
+        3
+    ) #font stroke
 
+# Draw a blue rectangle on top of an IMG , the orignalImage is a ref to an
+# untransformed image as given from
 def drawBondingRectangleOnImage(img,originalImage):
     h, w = img.shape[:2]
     ratio = [0.6,0.7]
@@ -60,3 +88,5 @@ def drawBondingRectangleOnImage(img,originalImage):
     imageWithRectangle = cv2.rectangle(img,  start_point, end_point,color,thickness)
 
     return originalImage[start_point[1]:end_point[1], start_point[0]:end_point[0]]
+
+#https://www.pyimagesearch.com/2017/04/03/facial-landmarks-dlib-opencv-python/
