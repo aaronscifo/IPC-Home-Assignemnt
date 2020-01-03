@@ -28,6 +28,9 @@ def rect_to_bb(rect):
 	# return a tuple of (x, y, w, h)
 	return (x, y, w, h)
 
+
+
+
 def resizeImage(img,height,width):
     dim = (width, height)
  
