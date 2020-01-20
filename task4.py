@@ -11,6 +11,7 @@ import argparse
 import imutils
 import dlib
 import cv2
+import time
 
 Detector = None
 Predictor = None
@@ -61,11 +62,14 @@ def main():
 		drawUI(im)
 		cv2.imshow("Frame", im)
 
+
 		key = cv2.waitKey(1)
 		if key == 27:  # ESC is pressed
 			break
-		if key == ord(' '):
-			cv2.imwrite('images/task4.png', croppedImage)
+		# if key == ord(' '):
+		# 	cv2.imwrite('images/task4.png', croppedImage)
+		saveCorrectImage(croppedImage)
+
 
 	Cap.release()
 	cv2.destroyAllWindows()
@@ -141,6 +145,16 @@ def getColorByValue(actualValue, validValue):
 		return (0, 255, 0)
 	return (0, 0, 255)
 
+def saveCorrectImage(croppedImage):
+	if(CurrentHeadState == 'good' 
+	and CurrentImageFocus == 'good' 
+	and CurrentEyeState == 'open' 
+	and CurrentMouthState == 'closed'
+	and CurrentImageFocus == 'good'):
+		cv2.imwrite('images/task4.png', croppedImage)
+		time.sleep(5)
+		pass
+	pass
 
 def drawUI(frame):
 	# global CurrentEyeState, CurrentMouthState
