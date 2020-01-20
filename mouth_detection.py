@@ -3,7 +3,7 @@ from common_function import *
 import cv2
 
 
-MOUTH_AR_THRESH = 0.86
+MOUTH_AR_THRESH = 0.9
 
 
 def detectMouthState(shape, image, drawMouth=True):
@@ -21,10 +21,10 @@ def detectMouthState(shape, image, drawMouth=True):
 		mouthHull = cv2.convexHull(mouth)
 		cv2.drawContours(image, [mouthHull], -1, (0, 255, 0), 1)
 
-	print(mouthEAR)
+	# print(mouthEAR)
 	# check to see if the mouth aspect ratio is below the EYE_AR_THRESH
 	# return the appropriate value based on this descion
-	if mouthEAR < MOUTH_AR_THRESH:
+	if mouthEAR > MOUTH_AR_THRESH:
 		return 'closed'
 
 	return 'open'
@@ -33,15 +33,18 @@ def detectMouthState(shape, image, drawMouth=True):
 def mouth_aspect_ratio(mouth):
 	# compute the euclidean distances between the two sets of
 	# vertical mouth landmarks (x, y)-coordinates
-	A = dist.euclidean(mouth[1], mouth[5])
-	B = dist.euclidean(mouth[2], mouth[4])
+	vertial = dist.euclidean(mouth[1], mouth[2])
+	vertial += dist.euclidean(mouth[2], mouth[3])
+	vertial += dist.euclidean(mouth[4], mouth[5])
 
 	# compute the euclidean distance between the horizontal
 	# mouth landmark (x, y)-coordinates
-	C = dist.euclidean(mouth[0], mouth[3])
+	horizontal = dist.euclidean(mouth[6], mouth[7])
+	# horizontal = dist.euclidean(mouth[13], mouth[14])
+	horizontal = dist.euclidean(mouth[0], mouth[11])
 
 	# compute the mouth aspect ratio
-	ear = (A + B) / (2.0 * C)
+	ear = vertial / (2.0 * horizontal)
 
 	# return the mouth aspect ratio
 	return ear

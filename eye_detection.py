@@ -3,7 +3,7 @@ from common_function import *
 import cv2
 
 
-EYE_AR_THRESH = 0.19
+EYE_AR_THRESH = 0.20
 
 
 def detectEyeState(shape, image, drawEye=True):
@@ -21,7 +21,7 @@ def detectEyeState(shape, image, drawEye=True):
 
 	# average the eye aspect ratio together for both eyes
 	ear = (leftEAR + rightEAR) / 2.0
-
+	print(ear)
 	# compute the convex hull for the left and right eye, then
 	# visualize each of the eyes
 	if drawEye == True:

@@ -4,6 +4,7 @@ import dlib
 from common_function import *
 from eye_detection import *
 from mouth_detection import *
+from foucs_detection import *
 import numpy as np
 import argparse
 import imutils
@@ -23,7 +24,7 @@ BLUR_THRESHOLD = 2450
 CurrentEyeStateChangeCount = 0
 CurrentMouthStateChangeCount = 0
 
-STATE_CHANGE_THRESHOLD = 6
+STATE_CHANGE_THRESHOLD = 4
 
 
 def init():
@@ -117,11 +118,9 @@ def handleFaces(rects, image, gray, original):
         else:
             CurrentMouthStateChangeCount = 0
 
-        currentBlur = cv2.Laplacian(face, cv2.CV_64F).var()
-        if currentBlur > BLUR_THRESHOLD:
-            CurrentImageFocus = 'Good'
-        else:
-            CurrentImageFocus = 'Bad'
+      
+        CurrentImageFocus = getFocusQuality(image)
+      
 
 
         # print(currentBlur)
