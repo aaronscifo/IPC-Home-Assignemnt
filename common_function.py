@@ -16,20 +16,33 @@ FACIAL_LANDMARKS_IDXS = OrderedDict([
 	("jaw", (0, 17))
 ])
 
-def rect_to_bb(rect):
+
+def rect_to_bb(rect, scaleX=1, scaleY=1):
 	# take a bounding predicted by dlib and convert it
 	# to the format (x, y, w, h) as we would normally do
 	# with OpenCV
 	x = rect.left()
 	y = rect.top()
-	w = rect.right() - x
+	w = rect.right()  - x
 	h = rect.bottom() - y
+	print("Original : "+str(x)+' '+str(y)+' '+str(w)+' '+str(h) )
+
+	if(scaleX > 1 or scaleY > 1):
+		# scaleX = scaleX/100
+		# scaleY = scaleY/100
+		wAdd =  round((w * scaleX) /2)
+		hAdd =  round((h * scaleY ) /2)#round((scaleY/100 * h )/2  )
+		
+		w += wAdd
+		h += hAdd
+
+		x -= round(wAdd/2)
+		y -= round(hAdd/2)
+
+		print("Resized : "+str(x)+' '+str(y)+' '+str(w)+' '+str(h) )
 
 	# return a tuple of (x, y, w, h)
 	return (x, y, w, h)
-
-
-
 
 def resizeImage(img,height,width):
     dim = (width, height)
@@ -74,8 +87,8 @@ def drawBondingRectangleOnImage(img,originalImage):
 
     ratioScaleRectW,ratioScaleRectH = calculateAspectRatioFit(w, h,ratio[0] * w, ratio[1] * h )
 
-    start_point = ( int( w/2 - ratioScaleRectW/2), int(h/2 - ratioScaleRectH/2) )  
-    end_point   = ( int(start_point[0] + ratioScaleRectW ), int(start_point[1] + ratioScaleRectH   ) ) 
+    start_point = ( int( w/2 - ratioScaleRectW/2), int( h/2 - ratioScaleRectH/2 ) )  
+    end_point   = ( int(start_point[0] + ratioScaleRectW ), int( start_point[1] + ratioScaleRectH   ) ) 
 
     boxSize = (ratioScaleRectW, ratioScaleRectH)
     # print('Resolution  ' + str(boxSize[0]) + 'x' + str(boxSize[1]) + ' = ' + str(boxSize[0]/boxSize[1]))
@@ -94,3 +107,17 @@ def drawBondingRectangleOnImage(img,originalImage):
 
 #https://www.pyimagesearch.com/2017/04/03/facial-landmarks-dlib-opencv-python/
 
+
+#The dlib face landmark detector will return a shape  object containing the 68 (x, y)-coordinates of the facial landmark regions.
+#Using the shape_to_np  function, we cam convert this object to a NumPy array, allowing it to “play nicer” with our Python code.
+def shape_to_np(shape, dtype="int"):
+	# initialize the list of (x, y)-coordinates
+	coords = np.zeros((68, 2), dtype=dtype)
+ 
+	# loop over the 68 facial landmarks and convert them
+	# to a 2-tuple of (x, y)-coordinates
+	for i in range(0, 68):
+		coords[i] = (shape.part(i).x, shape.part(i).y)
+ 
+	# return the list of (x, y)-coordinates
+	return coords

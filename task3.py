@@ -1,9 +1,7 @@
 import cv2
 import numpy as np
 import dlib
-from common_function import *
-from dlib_common_functions import *
-from imutils import face_utils
+from common_function import * 
 import numpy as np
 import argparse
 import imutils
@@ -34,19 +32,23 @@ def main():
 		im = original.copy()  # Store frame in variable
 
 		# load the input image, resize it, and convert it to grayscale
-		gray = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)#imutils.resize(im, width=500),
-
+		gray = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)#
+		# imutils.resize(im, width=500)
+		
 		# detect faces in the grayscale image
 		rects = detector(gray, 1)
 
 		# handle detected faces
-		handleFaces(rects, im,gray)
+		(start,end) = handleFaces(rects, im, gray)
 
 		cv2.imshow("Frame", im)
 
 		key = cv2.waitKey(1)
 		if key == 27:  # ESC is pressed
 			break
+		if key == ord('s'):
+			croppedImage = original[start[1] : end[1] , start[0] : end[0]  ]
+			cv2.imwrite('images/task3.png',croppedImage)
 
 	cap.release()
 	cv2.destroyAllWindows()
@@ -54,39 +56,33 @@ def main():
 
 def handleFaces(rects, image, gray):
 	# loop over the face detections
+	xScaled, yScaled , wScaled , hScaled = (0,0,0,0) 
 	for (i, rect) in enumerate(rects):
+	
+		# convert dlib's rectangle to a OpenCV-style bounding box
+		# [i.e., (x, y, w, h)], then draw the face bounding box
+		(x, y, w, h) = rect_to_bb(rect,1,1)
+		cv2.rectangle(image, (x, y), (x + w, y + h), (0, 255, 0), 2)
+
+		(xScaled, yScaled, wScaled, hScaled) =  rect_to_bb(rect,1.5,2)
+		scaledBoundingBoxCoord = (xScaled, yScaled), (xScaled + wScaled, yScaled + hScaled)
+		cv2.rectangle(image, scaledBoundingBoxCoord[0] ,scaledBoundingBoxCoord[1] , (0, 255, 0), 2)
+		
+		# show the face number
+		cv2.putText(image, "Face #{}".format(i + 1), (x - 10, y - 10),cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+
 		# determine the facial landmarks for the face region, then
 		# convert the facial landmark (x, y)-coordinates to a NumPy
 		# array
 		shape = predictor(gray, rect)
-		shape = face_utils.shape_to_np(shape)
+		shape = shape_to_np(shape)
 
-		# convert dlib's rectangle to a OpenCV-style bounding box
-		# [i.e., (x, y, w, h)], then draw the face bounding box
-		
-		(x, y, w, h) = face_utils.rect_to_bb(rect,1,1)
-		cv2.rectangle(image, (x, y), (x + w, y + h), (0, 255, 0), 2)
-
-
-		(x, y, w, h) = face_utils.rect_to_bb(rect,1.5,2)
-		cv2.rectangle(image, (x, y), (x + w, y + h), (0, 255, 0), 2)
-
-		# x = x - round(x * 0.75)
-		# y = y - round(y * 0.5)
-
-		# w = w + round(w * 0.75)
-		
-		# h = h + round(h * 0.5)
-		
-
-		# show the face number
-		cv2.putText(image, "Face #{}".format(i + 1), (x - 10, y - 10),cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
 
 		# loop over the (x, y)-coordinates for the facial landmarks
 		# and draw them on the image
 		# for (x, y) in shape:
 			# cv2.circle(image, (x, y), 1, (0, 0, 255), -1)
-
+	return scaledBoundingBoxCoord
 
 init()
 main()
