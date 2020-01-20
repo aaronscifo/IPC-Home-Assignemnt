@@ -10,124 +10,143 @@ import imutils
 import dlib
 import cv2
 
-Detector  = None
+Detector = None
 Predictor = None
-Cap       = None
+Cap = None
 
 
-CurrentEyeState   = 'open'
+CurrentEyeState = 'open'
 CurrentMouthState = 'closed'
+CurrentImageFocus = 'Good'
+BLUR_THRESHOLD = 2450
 
-CurrentEyeStateChangeCount 	 = 0
+CurrentEyeStateChangeCount = 0
 CurrentMouthStateChangeCount = 0
 
-STATE_CHANGE_THRESHOLD = 4
+STATE_CHANGE_THRESHOLD = 6
+
 
 def init():
-	global Cap, Detector, Predictor
+    global Cap, Detector, Predictor
 
-	# create the landmark predictor
-	Cap = cv2.VideoCapture(0)
-	cv2.namedWindow("Frame")
+    # create the landmark predictor
+    Cap = cv2.VideoCapture(0)
+    cv2.namedWindow("Frame")
 
-	# Create face dector and predictor
-	Detector = dlib.get_frontal_face_detector()
-	Predictor = dlib.shape_predictor(
-		'data/shape_predictor_68_face_landmarks.dat')
+    # Create face dector and predictor
+    Detector = dlib.get_frontal_face_detector()
+    Predictor = dlib.shape_predictor(
+        'data/shape_predictor_68_face_landmarks.dat')
 
 
 def main():
-	while True:
-		_, original = Cap.read(cv2.IMREAD_UNCHANGED)
-		im = original.copy()  # Store frame in variable
+    while True:
+        _, original = Cap.read(cv2.IMREAD_UNCHANGED)
+        im = original.copy()  # Store frame in variable
 
-		# load the input image, resize it, and convert it to grayscale
-		gray = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
-		# imutils.resize(im, width=500)
+        # load the input image, resize it, and convert it to grayscale
+        gray = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
+        # imutils.resize(im, width=500)
 
-		# detect faces in the grayscale image
-		rects = Detector(gray, 1)
+        # detect faces in the grayscale image
+        rects = Detector(gray, 1)
 
-		# handle detected faces
-		(start, end) = handleFaces(rects, im, gray)
+        # handle detected faces
+        (start, end) = handleFaces(rects, im, gray, original)
 
-		drawUI(im)
-		cv2.imshow("Frame", im)
+        drawUI(im)
+        cv2.imshow("Frame", im)
 
-		key = cv2.waitKey(1)
-		if key == 27:  # ESC is pressed
-			break
-		if key == ord(' '):
-			croppedImage = original[start[1]: end[1], start[0]: end[0]]
-			cv2.imwrite('images/task3.png', croppedImage)
+        key = cv2.waitKey(1)
+        if key == 27:  # ESC is pressed
+            break
+        if key == ord(' '):
+            croppedImage = original[start[1]: end[1], start[0]: end[0]]
+            cv2.imwrite('images/task3.png', croppedImage)
 
-	Cap.release()
-	cv2.destroyAllWindows()
+    Cap.release()
+    cv2.destroyAllWindows()
 
 
-def handleFaces(rects, image, gray):
-	global CurrentEyeState, CurrentMouthState, CurrentEyeStateChangeCount, CurrentMouthStateChangeCount, STATE_CHANGE_THRESHOLD
-	# loop over the face detections
-	xScaled, yScaled, wScaled, hScaled = (0, 0, 0, 0)
-	scaledBoundingBoxCoord = ((0, 0), (0, 0))
-	for (i, rect) in enumerate(rects):
+def handleFaces(rects, image, gray, original):
+    global CurrentEyeState, CurrentMouthState, CurrentEyeStateChangeCount, CurrentMouthStateChangeCount, STATE_CHANGE_THRESHOLD, CurrentImageFocus
+    # loop over the face detections
+    xScaled, yScaled, wScaled, hScaled = (0, 0, 0, 0)
+    scaledBoundingBoxCoord = ((0, 0), (0, 0))
 
-		# convert dlib's rectangle to a OpenCV-style bounding box
-		# [i.e., (x, y, w, h)], then draw the face bounding box
-		(x, y, w, h) = rect_to_bb(rect, 1, 1)
-		cv2.rectangle(image, (x, y), (x + w, y + h), (0, 255, 0), 2)
+    if(len(rects) == 0):
+        CurrentEyeState = 'closed'
+        CurrentMouthState = 'open'
+        CurrentImageFocus = 'bad'
 
-		# show the face number
-		cv2.putText(image, "Face #{}".format(i + 1), (x - 10, y - 10),
-					cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+    for (i, rect) in enumerate(rects):
 
-		# determine the facial landmarks for the face region, then
-		# convert the facial landmark (x, y)-coordinates to a NumPy
-		# array
-		shape = Predictor(gray, rect)
-		shape = shape_to_np(shape)
+        # determine the facial landmarks for the face region, then
+        # convert the facial landmark (x, y)-coordinates to a NumPy
+        # array
+        shape = Predictor(gray, rect)
+        shape = shape_to_np(shape)
 
-		# detect eye state,a threshold count before chaning the actual state
-		newCurrentEyeState = detectEyeState(shape, image, True)
-		if(CurrentEyeState != newCurrentEyeState):
-			CurrentEyeStateChangeCount+=1
-			if(CurrentEyeStateChangeCount >= STATE_CHANGE_THRESHOLD):
-				CurrentEyeState = newCurrentEyeState
-		else:
-			CurrentEyeStateChangeCount = 0
-
-		# detect eye state, we need to pass a threshold count before chaning the actual state
-		newCurrentMouthState = detectMouthState(shape, image, True)
-		if(CurrentMouthState != newCurrentMouthState):
-			CurrentMouthStateChangeCount+=1
-			if(CurrentMouthStateChangeCount >= STATE_CHANGE_THRESHOLD):
-				CurrentMouthState = newCurrentMouthState
-		else:
-			CurrentMouthStateChangeCount = 0
+        # convert dlib's rectangle to a OpenCV-style bounding box
+        # [i.e., (x, y, w, h)], then draw the face bounding box
+        (x, y, w, h) = rect_to_bb(rect, 1, 1)
+        cv2.rectangle(image, (x, y), (x + w, y + h), (0, 255, 0), 2)
 		
-		# newCurrentMouthState = detectMouthState(shape, image, True)
+        face = image[y:y + h, x:x + w]
+        # cv2.imwrite('images/face.png', face)
+
+        # show the face number
+        cv2.putText(image, "Face #{}".format(i + 1), (x - 10, y - 10),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+
+        # detect eye state,a threshold count before chaning the actual state
+        newCurrentEyeState = detectEyeState(shape, image, True)
+        if(CurrentEyeState != newCurrentEyeState):
+            CurrentEyeStateChangeCount += 1
+            if(CurrentEyeStateChangeCount >= STATE_CHANGE_THRESHOLD):
+                CurrentEyeState = newCurrentEyeState
+        else:
+            CurrentEyeStateChangeCount = 0
+
+        # detect eye state, we need to pass a threshold count before chaning the actual state
+        newCurrentMouthState = detectMouthState(shape, image, True)
+        if(CurrentMouthState != newCurrentMouthState):
+            CurrentMouthStateChangeCount += 1
+            if(CurrentMouthStateChangeCount >= STATE_CHANGE_THRESHOLD):
+                CurrentMouthState = newCurrentMouthState
+        else:
+            CurrentMouthStateChangeCount = 0
+
+        currentBlur = cv2.Laplacian(face, cv2.CV_64F).var()
+        if currentBlur > BLUR_THRESHOLD:
+            CurrentImageFocus = 'Good'
+        else:
+            CurrentImageFocus = 'Bad'
 
 
-		# print(CurrentEyeState)
+        # print(currentBlur)
 
-		# loop over the (x, y)-coordinates for the facial landmarks
-		# and draw them on the image
-		# for (x, y) in shape:
-		# 	cv2.circle(image, (x, y), 1, (0, 0, 255), -1)
-	return scaledBoundingBoxCoord
+        # loop over the (x, y)-coordinates for the facial landmarks
+        # and draw them on the image
+        # for (x, y) in shape:
+        # 	cv2.circle(image, (x, y), 1, (0, 0, 255), -1)
+    return scaledBoundingBoxCoord
 
-def getColorByValue(actualValue,validValue):
-	if(actualValue == validValue):
-		return  (0, 255, 0)
-	return  (0, 0, 255)
+
+def getColorByValue(actualValue, validValue):
+    if(actualValue == validValue):
+        return (0, 255, 0)
+    return (0, 0, 255)
+
 
 def drawUI(frame):
-	global CurrentEyeState, CurrentMouthState
-	
-	cv2.putText(frame, "Eye State: {}".format(CurrentEyeState), (10, 30),
-				cv2.FONT_HERSHEY_SIMPLEX, 0.7, getColorByValue(CurrentEyeState,'open'), 2)
-	cv2.putText(frame, "Mouth State: {}".format(CurrentMouthState), (300, 30),
-				cv2.FONT_HERSHEY_SIMPLEX, 0.7, getColorByValue(CurrentMouthState,'closed'), 2)
+    # global CurrentEyeState, CurrentMouthState
+    cv2.putText(frame, "Eye State: {}".format(CurrentEyeState), (10, 30),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.7, getColorByValue(CurrentEyeState, 'open'), 2)
+    cv2.putText(frame, "Mouth State: {}".format(CurrentMouthState), (300, 30),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.7, getColorByValue(CurrentMouthState, 'closed'), 2)
+    cv2.putText(frame, "Good Focus: {}".format(CurrentImageFocus), (300,  450),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.7, getColorByValue(CurrentImageFocus, 'Good'), 2)
 
 
 init()

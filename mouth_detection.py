@@ -3,7 +3,7 @@ from common_function import *
 import cv2
 
 
-MOUTH_AR_THRESH = 0.45
+MOUTH_AR_THRESH = 0.86
 
 
 def detectMouthState(shape, image, drawMouth=True):
@@ -14,21 +14,17 @@ def detectMouthState(shape, image, drawMouth=True):
 	# coordinates to compute the mouth aspect ratio for both mouths
 	mouth = shape[lStart:lEnd]
 	mouthEAR = mouth_aspect_ratio(mouth)
-	
-
-	# average the mouth aspect ratio together for both mouths
-	ear = (mouthEAR) / 2.0
 
 	# compute the convex hull for the  mouth, then
 	# visualize each of the mouths
 	if drawMouth == True:
-		leftMouthHull = cv2.convexHull(mouth)
-		cv2.drawContours(image, [leftMouthHull], -1, (0, 255, 0), 1)
+		mouthHull = cv2.convexHull(mouth)
+		cv2.drawContours(image, [mouthHull], -1, (0, 255, 0), 1)
 
-	print(ear)
+	print(mouthEAR)
 	# check to see if the mouth aspect ratio is below the EYE_AR_THRESH
 	# return the appropriate value based on this descion
-	if ear < MOUTH_AR_THRESH:
+	if mouthEAR < MOUTH_AR_THRESH:
 		return 'closed'
 
 	return 'open'
