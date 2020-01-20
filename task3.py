@@ -46,7 +46,7 @@ def main():
 		key = cv2.waitKey(1)
 		if key == 27:  # ESC is pressed
 			break
-		if key == ord('s'):
+		if key == ord(' '):
 			croppedImage = original[start[1] : end[1] , start[0] : end[0]  ]
 			cv2.imwrite('images/task3.png',croppedImage)
 
