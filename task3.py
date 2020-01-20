@@ -57,6 +57,7 @@ def main():
 def handleFaces(rects, image, gray):
 	# loop over the face detections
 	xScaled, yScaled , wScaled , hScaled = (0,0,0,0) 
+	scaledBoundingBoxCoord = ( (0, 0), (0, 0) )
 	for (i, rect) in enumerate(rects):
 	
 		# convert dlib's rectangle to a OpenCV-style bounding box
@@ -65,23 +66,29 @@ def handleFaces(rects, image, gray):
 		cv2.rectangle(image, (x, y), (x + w, y + h), (0, 255, 0), 2)
 
 		(xScaled, yScaled, wScaled, hScaled) =  rect_to_bb(rect,1.5,2)
-		scaledBoundingBoxCoord = (xScaled, yScaled), (xScaled + wScaled, yScaled + hScaled)
-		cv2.rectangle(image, scaledBoundingBoxCoord[0] ,scaledBoundingBoxCoord[1] , (0, 255, 0), 2)
+
 		
+		scaledBoundingBoxCoord = ( (xScaled, yScaled), (xScaled + wScaled, yScaled + hScaled) )
+		
+		if ( len(scaledBoundingBoxCoord) == 2 and len(scaledBoundingBoxCoord[0]) == 2 and  len(scaledBoundingBoxCoord[1]) == 2):
+			cv2.rectangle(image, scaledBoundingBoxCoord[0] ,scaledBoundingBoxCoord[1] , (0, 255, 0), 2)
+		else:
+			scaledBoundingBoxCoord = ( (0, 0), (0, 0) )
+
 		# show the face number
 		cv2.putText(image, "Face #{}".format(i + 1), (x - 10, y - 10),cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
 
 		# determine the facial landmarks for the face region, then
 		# convert the facial landmark (x, y)-coordinates to a NumPy
 		# array
-		shape = predictor(gray, rect)
-		shape = shape_to_np(shape)
+		# shape = predictor(gray, rect)
+		# shape = shape_to_np(shape)
 
 
 		# loop over the (x, y)-coordinates for the facial landmarks
 		# and draw them on the image
 		# for (x, y) in shape:
-			# cv2.circle(image, (x, y), 1, (0, 0, 255), -1)
+		# 	cv2.circle(image, (x, y), 1, (0, 0, 255), -1)
 	return scaledBoundingBoxCoord
 
 init()
