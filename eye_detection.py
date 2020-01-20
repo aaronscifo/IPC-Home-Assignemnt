@@ -21,7 +21,7 @@ def detectEyeState(shape, image, drawEye=True):
 
 	# average the eye aspect ratio together for both eyes
 	ear = (leftEAR + rightEAR) / 2.0
-	print(ear)
+	# print(ear)
 	# compute the convex hull for the left and right eye, then
 	# visualize each of the eyes
 	if drawEye == True:

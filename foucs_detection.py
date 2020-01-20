@@ -18,6 +18,6 @@ def getFocusQuality(image):
     # if the focus measure is less than the supplied threshold,
     # then the image should be considered "blurry"
     if fm < Threshold:
-        return "Bad"
+        return "bad"
 
-    return "Good"
+    return "good"
