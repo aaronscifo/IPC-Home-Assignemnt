@@ -82,9 +82,10 @@ def handleFaces(rects, image, gray, original):
 	scaledBoundingBoxCoord = ((0, 0), (0, 0))
 
 	if(len(rects) == 0):
-		CurrentEyeState = 'closed'
+		CurrentEyeState   = 'closed'
 		CurrentMouthState = 'open'
 		CurrentImageFocus = 'bad'
+		CurrentHeadState  = 'bad'
 
 	for (i, rect) in enumerate(rects):
 		if(i > 0):
