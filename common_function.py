@@ -25,7 +25,7 @@ def rect_to_bb(rect, scaleX=1, scaleY=1):
 	y = rect.top()
 	w = rect.right()  - x
 	h = rect.bottom() - y
-	print("Original : "+str(x)+' '+str(y)+' '+str(w)+' '+str(h) )
+	# print("Original : "+str(x)+' '+str(y)+' '+str(w)+' '+str(h) )
 
 	if(scaleX > 1 or scaleY > 1):
 		# scaleX = scaleX/100
@@ -39,7 +39,7 @@ def rect_to_bb(rect, scaleX=1, scaleY=1):
 		x -= round(wAdd/2)
 		y -= round(hAdd/2)
 
-		print("Resized : "+str(x)+' '+str(y)+' '+str(w)+' '+str(h) )
+		# print("Resized : "+str(x)+' '+str(y)+' '+str(w)+' '+str(h) )
 
 	# return a tuple of (x, y, w, h)
 	return (x, y, w, h)
