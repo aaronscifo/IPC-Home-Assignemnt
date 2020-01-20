@@ -10,14 +10,18 @@ import imutils
 import dlib
 import cv2
 
-Detector = None
+Detector  = None
 Predictor = None
-Cap = None
+Cap       = None
 
 
-CurrentEyeState = 'open'
-CurrentMouthState = 'open'
+CurrentEyeState   = 'open'
+CurrentMouthState = 'closed'
 
+CurrentEyeStateChangeCount 	 = 0
+CurrentMouthStateChangeCount = 0
+
+STATE_CHANGE_THRESHOLD = 4
 
 def init():
 	global Cap, Detector, Predictor
@@ -62,7 +66,7 @@ def main():
 
 
 def handleFaces(rects, image, gray):
-	global CurrentEyeState
+	global CurrentEyeState, CurrentMouthState, CurrentEyeStateChangeCount, CurrentMouthStateChangeCount, STATE_CHANGE_THRESHOLD
 	# loop over the face detections
 	xScaled, yScaled, wScaled, hScaled = (0, 0, 0, 0)
 	scaledBoundingBoxCoord = ((0, 0), (0, 0))
@@ -83,8 +87,27 @@ def handleFaces(rects, image, gray):
 		shape = Predictor(gray, rect)
 		shape = shape_to_np(shape)
 
-		# detect eye state
-		CurrentEyeState = detectEyeState(shape, image, True)
+		# detect eye state,a threshold count before chaning the actual state
+		newCurrentEyeState = detectEyeState(shape, image, True)
+		if(CurrentEyeState != newCurrentEyeState):
+			CurrentEyeStateChangeCount+=1
+			if(CurrentEyeStateChangeCount >= STATE_CHANGE_THRESHOLD):
+				CurrentEyeState = newCurrentEyeState
+		else:
+			CurrentEyeStateChangeCount = 0
+
+		# detect eye state, we need to pass a threshold count before chaning the actual state
+		newCurrentMouthState = detectMouthState(shape, image, True)
+		if(CurrentMouthState != newCurrentMouthState):
+			CurrentMouthStateChangeCount+=1
+			if(CurrentMouthStateChangeCount >= STATE_CHANGE_THRESHOLD):
+				CurrentMouthState = newCurrentMouthState
+		else:
+			CurrentMouthStateChangeCount = 0
+		
+		# newCurrentMouthState = detectMouthState(shape, image, True)
+
+
 		# print(CurrentEyeState)
 
 		# loop over the (x, y)-coordinates for the facial landmarks
@@ -93,14 +116,18 @@ def handleFaces(rects, image, gray):
 		# 	cv2.circle(image, (x, y), 1, (0, 0, 255), -1)
 	return scaledBoundingBoxCoord
 
+def getColorByValue(actualValue,validValue):
+	if(actualValue == validValue):
+		return  (0, 255, 0)
+	return  (0, 0, 255)
 
 def drawUI(frame):
-	global CurrentEyeState
+	global CurrentEyeState, CurrentMouthState
 	
 	cv2.putText(frame, "Eye State: {}".format(CurrentEyeState), (10, 30),
-				cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
-	# cv2.putText(frame, "EAR: {:.2f}".format(ear), (300, 30),
-	# 			cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
+				cv2.FONT_HERSHEY_SIMPLEX, 0.7, getColorByValue(CurrentEyeState,'open'), 2)
+	cv2.putText(frame, "Mouth State: {}".format(CurrentMouthState), (300, 30),
+				cv2.FONT_HERSHEY_SIMPLEX, 0.7, getColorByValue(CurrentMouthState,'closed'), 2)
 
 
 init()
